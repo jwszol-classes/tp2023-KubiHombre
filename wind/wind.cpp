@@ -1,4 +1,4 @@
-// wind.cpp : Defines the entry point for the application.
+﻿// wind.cpp : Defines the entry point for the application.
 //
 
 #include "framework.h"
@@ -146,7 +146,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
+
+            RECT trzecie_pietro = { 10, 10, 500, 150 };
+            HBRUSH trzecie_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
+            FillRect(hdc, &trzecie_pietro, trzecie_pietro_wypelnienie);
+
+            RECT drugie_pietro = { 10, 160, 500, 300 };
+            HBRUSH drugie_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
+            FillRect(hdc, &drugie_pietro, drugie_pietro_wypelnienie);
+
+            RECT pierwsze_pietro = { 10, 160 + 150, 500, 300 + 150 };
+            HBRUSH pierwsze_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
+            FillRect(hdc, &pierwsze_pietro, pierwsze_pietro_wypelnienie);
+
             EndPaint(hWnd, &ps);
         }
         break;
