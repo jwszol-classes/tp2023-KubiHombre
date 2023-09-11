@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "wind.h"
+#include "vector"
 
 #define MAX_LOADSTRING 100
 
@@ -10,6 +11,8 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+std::vector<int> kolejka;                       // vector przechowywujący kolejnosc jazdy windy
+int ruch_windy_y = 0;                           // wartosc przesuniecia windy wzdluz osi y
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -24,8 +27,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Place code here.
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -128,7 +129,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-            // Parse the menu selections:
+
             switch (wmId)
             {
             case IDM_ABOUT:
@@ -137,8 +138,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+            /*
+            case IDM_BUTTON1:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                break;
+            case IDM_BUTTON1:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
+                */
             }
         }
         break;
@@ -158,6 +167,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             RECT pierwsze_pietro = { 10, 160 + 150, 500, 300 + 150 };
             HBRUSH pierwsze_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
             FillRect(hdc, &pierwsze_pietro, pierwsze_pietro_wypelnienie);
+
+            RECT winda_ramka = { 510, 10, 650, 450 };
+            HBRUSH winda_ramka_wypelnienie = CreateSolidBrush(RGB(0, 0, 0));
+            FillRect(hdc, &winda_ramka, winda_ramka_wypelnienie);
+
+            RECT winda = { 515, 445 + ruch_windy_y, 645, 445 - 135 + ruch_windy_y };
+            HBRUSH winda_wypelnienie = CreateSolidBrush(RGB(255, 255, 255));
+            FillRect(hdc, &winda, winda_wypelnienie);
 
             EndPaint(hWnd, &ps);
         }

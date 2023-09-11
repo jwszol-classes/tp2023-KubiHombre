@@ -46,4 +46,12 @@
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="button1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="button2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
