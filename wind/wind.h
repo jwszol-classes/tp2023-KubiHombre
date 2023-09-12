@@ -11,6 +11,5 @@
 
 #define ID_dodaj_osobe_2 1007
 #define ID_dodaj_osobe_1 1009
-#define ID_dodaj_osobe_0 1010
 
 #define ID_start 1008
