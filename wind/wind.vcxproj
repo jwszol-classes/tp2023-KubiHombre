@@ -139,6 +139,7 @@
     <ResourceCompile Include="wind.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon1.ico" />
     <Image Include="small.ico" />
     <Image Include="wind.ico" />
   </ItemGroup>

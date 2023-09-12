@@ -1,2 +1,6 @@
 ﻿  wind.cpp
+C:\Users\jakub\Desktop\Projects\tp2023-KubiHombre\wind\wind.cpp(367,31): warning C4018: '<': signed/unsigned mismatch
+C:\Users\jakub\Desktop\Projects\tp2023-KubiHombre\wind\wind.cpp(373,57): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\jakub\Desktop\Projects\tp2023-KubiHombre\wind\wind.cpp(374,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\jakub\Desktop\Projects\tp2023-KubiHombre\wind\wind.cpp(375,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   wind.vcxproj -> C:\Users\jakub\Desktop\Projects\tp2023-KubiHombre\x64\Debug\wind.exe

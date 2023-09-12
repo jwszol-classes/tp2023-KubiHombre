@@ -4,21 +4,117 @@
 #include "framework.h"
 #include "wind.h"
 #include "vector"
+#include <string>
 
 #define MAX_LOADSTRING 100
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
+UINT_PTR timerId = 1;
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 std::vector<int> kolejka;                       // vector przechowywujący kolejnosc jazdy windy
-int ruch_windy_y = 0;                           // wartosc przesuniecia windy wzdluz osi y
+int ruch_windy_y = 445;                         // wartosc przesuniecia windy wzdluz osi y
+int ruch_windy_od = 0;
+int ruch_windy_do = 0;
+bool od_do = true; 
+bool czy_na_dol = false;
+int czas_5s = 0;
+bool stop = false;
+int czas_stop = 0;
+unsigned int liczba_pasazerow = 0;
+unsigned int liczba_pasazerow_0 = 0;
+unsigned int liczba_pasazerow_1 = 0;
+unsigned int liczba_pasazerow_2 = 0;
+bool przekroczenieMasy = false;
 
-// Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+// Funkcja przypisuje koordynaty do ktorych ma zmierzac winda w zaleznosci od pierwszego przywolania windy w kolejce.
+void planowanie_ruchow_windy() {
+    if (!kolejka.empty()) {
+        switch (kolejka[0])
+        {
+        case 0:
+            ruch_windy_od = 445;
+            ruch_windy_do = 295;
+            break;
+        case 1:
+            ruch_windy_od = 445;
+            ruch_windy_do = 145;
+            break;
+        case 2:
+            ruch_windy_od = 295;
+            ruch_windy_do = 445;
+            break;
+        case 3:
+            ruch_windy_od = 295;
+            ruch_windy_do = 145;
+            break;
+        case 4:
+            ruch_windy_od = 145;
+            ruch_windy_do = 295;
+            break;
+        case 5:
+            ruch_windy_od = 145;
+            ruch_windy_do = 445;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+// Funkcja odpowiada za ruch windy (tzn. zmienia pozycje windy wzdloz osi y i rysuje scene na nowo)
+void ruch_windy(HWND hWnd) {
+    if ((!kolejka.empty() or czy_na_dol) and przekroczenieMasy == false) {
+        if (od_do) {
+            if (ruch_windy_y < ruch_windy_od) {
+                ruch_windy_y+=5;
+            }
+            else {
+                ruch_windy_y-=5;
+            }
+            if (ruch_windy_y == ruch_windy_od) {
+                od_do = false;
+                stop = true;
+            }
+        }
+        else {
+            if (ruch_windy_y < ruch_windy_do) {
+                ruch_windy_y+=5;
+            }
+            else {
+                ruch_windy_y-=5;
+            }
+            if (ruch_windy_y == ruch_windy_do) {
+                if (ruch_windy_y == 445) {
+                    liczba_pasazerow = liczba_pasazerow - liczba_pasazerow_0;
+                    liczba_pasazerow_0 = 0;
+                }
+                if (ruch_windy_y == 295) {
+                    liczba_pasazerow = liczba_pasazerow - liczba_pasazerow_1;
+                    liczba_pasazerow_1 = 0;
+                }
+                if (ruch_windy_y == 145) {
+                    liczba_pasazerow = liczba_pasazerow - liczba_pasazerow_2;
+                    liczba_pasazerow_2 = 0;
+                }
+                if(!czy_na_dol)
+                    kolejka.erase(kolejka.begin());
+                od_do = true;
+                if (kolejka.empty() and ruch_windy_do != 445)
+                    czy_na_dol = true;
+                czas_5s = 0;
+            }
+        }
+        RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+    }
+}
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -28,12 +124,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_WIND, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
-    // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
     {
         return FALSE;
@@ -43,7 +137,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg;
 
-    // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -58,11 +151,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
+
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -84,22 +173,27 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Store instance handle in our global variable
+   hInst = hInstance;
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+
+   // Wyswietlanie przyciskow
+   HWND button_2_0 = CreateWindow(L"BUTTON", L"0", WS_VISIBLE | WS_CHILD, 10, 10, 70, 70, hWnd, (HMENU)ID_button_2_do_0, hInstance, nullptr);
+   HWND button_2_1 = CreateWindow(L"BUTTON", L"1", WS_VISIBLE | WS_CHILD, 10, 80, 70, 70, hWnd, (HMENU)ID_button_2_do_1, hInstance, nullptr);
+   HWND button_1_0 = CreateWindow(L"BUTTON", L"0", WS_VISIBLE | WS_CHILD, 10, 150 + 10, 70, 70, hWnd, (HMENU)ID_button_1_do_0, hInstance, nullptr);
+   HWND button_1_2 = CreateWindow(L"BUTTON", L"2", WS_VISIBLE | WS_CHILD, 10, 220 + 10, 70, 70, hWnd, (HMENU)ID_button_1_do_2, hInstance, nullptr);
+   HWND button_0_1 = CreateWindow(L"BUTTON", L"1", WS_VISIBLE | WS_CHILD, 10, 290 + 20, 70, 70, hWnd, (HMENU)ID_button_0_do_1, hInstance, nullptr);
+   HWND button_0_2 = CreateWindow(L"BUTTON", L"2", WS_VISIBLE | WS_CHILD, 10, 360 + 20, 70, 70, hWnd, (HMENU)ID_button_0_do_2, hInstance, nullptr);
+   HWND button_start = CreateWindow(L"BUTTON", L"start", WS_VISIBLE | WS_CHILD, 100, 360 + 20, 70, 70, hWnd, (HMENU)ID_start, hInstance, nullptr);
+   HWND button_start1 = CreateWindow(L"BUTTON", L"start", WS_VISIBLE | WS_CHILD, 100, 210 + 20, 70, 70, hWnd, (HMENU)ID_start, hInstance, nullptr);
+   HWND button_start2 = CreateWindow(L"BUTTON", L"start", WS_VISIBLE | WS_CHILD, 100, 80, 70, 70, hWnd, (HMENU)ID_start, hInstance, nullptr);
+   HWND button_dodaj = CreateWindow(L"BUTTON", L"Dodaj pasażera", WS_VISIBLE | WS_CHILD, 100, 290 + 20, 170, 70, hWnd, (HMENU)ID_dodaj_osobe_0, hInstance, nullptr);
+   HWND button_dodaj1 = CreateWindow(L"BUTTON", L"Dodaj pasażera", WS_VISIBLE | WS_CHILD, 100, 140 + 20, 170, 70, hWnd, (HMENU)ID_dodaj_osobe_1, hInstance, nullptr);
+   HWND button_dodaj2 = CreateWindow(L"BUTTON", L"Dodaj pasażera", WS_VISIBLE | WS_CHILD, 100, 10, 170, 70, hWnd, (HMENU)ID_dodaj_osobe_2, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -112,20 +206,59 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    //licznik czasu 
+    case WM_CREATE:
+        SetTimer(hWnd, 1, 25, nullptr);
+        break;
+
+    case WM_TIMER:
+        if (liczba_pasazerow * 70 > 600) {
+            liczba_pasazerow = 0;
+            liczba_pasazerow_0 = 0;
+            liczba_pasazerow_1 = 0;
+            liczba_pasazerow_2 = 0;
+            MessageBox(NULL, L"Masa została przekroczona!", L"Blad!", MB_ICONINFORMATION | MB_OK);
+            RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+        }
+        
+        if (stop) {
+            // Winda rusza po 3s lub po wcisniecie start
+            czas_stop += 25;
+            if (czas_stop == 50000) {
+                stop = false;
+                czas_stop = 0;
+            }
+        }
+        else {
+            if (czy_na_dol == false) {
+                planowanie_ruchow_windy();
+                ruch_windy(hWnd);
+                czas_stop = 0;
+            }
+            else {
+                // powrot windy na pietro nr.0 po 5s bezczynnosci 
+                czas_5s += 25;
+                if (czas_5s > 5000) {
+                    ruch_windy_do = 445;
+                    ruch_windy_od = 445;
+                    ruch_windy(hWnd);
+                }
+            }
+        }
+        break;
+
+    case WM_DESTROY:
+        KillTimer(hWnd, 1);
+        PostQuitMessage(0);
+        break;
+
+
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -138,17 +271,72 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
-            /*
-            case IDM_BUTTON1:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            // Przyciski przywolujace winde
+            case ID_button_0_do_1:
+                kolejka.push_back(0);
+                czy_na_dol = false;
                 break;
-            case IDM_BUTTON1:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            case ID_button_0_do_2:
+                kolejka.push_back(1);
+                czy_na_dol = false;
+                break;
+            case ID_button_1_do_0:
+                kolejka.push_back(2);
+                czy_na_dol = false;
+                break;
+            case ID_button_1_do_2:
+                kolejka.push_back(3);
+                czy_na_dol = false;
+                break;
+            case ID_button_2_do_1:
+                kolejka.push_back(4);
+                czy_na_dol = false;
+                break;
+            case ID_button_2_do_0:
+                kolejka.push_back(5);
+                czy_na_dol = false;
+                break;
+
+            // przcisk aktywujacy ruch windy 
+            case ID_start:
+                stop = false;
+                break;
+            case ID_dodaj_osobe_0:
+                if (!kolejka.empty()) {
+                    RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+                    liczba_pasazerow++;
+                    if (kolejka[0] == 0 or kolejka[0] == 4)
+                        liczba_pasazerow_1++;
+                    if (kolejka[0] == 1 or kolejka[0] == 3)
+                        liczba_pasazerow_2++;
+                }
+                break;
+
+            // przyciski dodajace pasazerow
+            case ID_dodaj_osobe_1:
+                if (!kolejka.empty()) {
+                    RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+                    liczba_pasazerow++;
+                    if (kolejka[0] == 1 or kolejka[0] == 3)
+                        liczba_pasazerow_2++;
+                    if (kolejka[0] == 2 or kolejka[0] == 5)
+                        liczba_pasazerow_0++;
+                }
+                break;
+            case ID_dodaj_osobe_2:
+                if (!kolejka.empty()) {
+                    RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+                    liczba_pasazerow++;
+                    if (kolejka[0] == 0 or kolejka[0] == 4)
+                        liczba_pasazerow_1++;
+                    if (kolejka[0] == 2 or kolejka[0] == 5)
+                        liczba_pasazerow_0++;
+                }
                 break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
-                */
             }
+    
         }
         break;
     case WM_PAINT:
@@ -156,31 +344,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
 
-            RECT trzecie_pietro = { 10, 10, 500, 150 };
+            // rysowanie pieter 
+            RECT trzecie_pietro = { 10, 10, 500, 150 }; 
             HBRUSH trzecie_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
             FillRect(hdc, &trzecie_pietro, trzecie_pietro_wypelnienie);
-
             RECT drugie_pietro = { 10, 160, 500, 300 };
             HBRUSH drugie_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
             FillRect(hdc, &drugie_pietro, drugie_pietro_wypelnienie);
-
             RECT pierwsze_pietro = { 10, 160 + 150, 500, 300 + 150 };
             HBRUSH pierwsze_pietro_wypelnienie = CreateSolidBrush(RGB(211, 211, 211));
             FillRect(hdc, &pierwsze_pietro, pierwsze_pietro_wypelnienie);
 
+            // rysowanie windy
             RECT winda_ramka = { 510, 10, 650, 450 };
             HBRUSH winda_ramka_wypelnienie = CreateSolidBrush(RGB(0, 0, 0));
             FillRect(hdc, &winda_ramka, winda_ramka_wypelnienie);
-
-            RECT winda = { 515, 445 + ruch_windy_y, 645, 445 - 135 + ruch_windy_y };
+            RECT winda = { 515, ruch_windy_y - 135, 645, ruch_windy_y};
             HBRUSH winda_wypelnienie = CreateSolidBrush(RGB(255, 255, 255));
             FillRect(hdc, &winda, winda_wypelnienie);
 
+            // Rysowanie pasazerow
+            for (int i = 0; i < liczba_pasazerow; i++) {
+                MoveToEx(hdc, 525 + i * 15, ruch_windy_y - 2, NULL);
+                LineTo(hdc, 525 + i * 15, ruch_windy_y - 122);
+            }
+
+            // Opisy pieter
+            TextOutA(hdc, 400, 20, "Pietro nr.2", strlen("Pietro nr.2"));
+            TextOutA(hdc, 400, 170, "Pietro nr.1", strlen("Pietro nr.1"));
+            TextOutA(hdc, 400, 320, "Pietro nr.0", strlen("Pietro nr.0"));
+
+            // Wyswietlanie masy
+            std::string masa = std::to_string(liczba_pasazerow * 70);
+            std::string napis = "Masa pasazerow = " + masa;
+            TextOutA(hdc, 680, 30, napis.c_str(), static_cast<int>(napis.length()));
+            
+
             EndPaint(hWnd, &ps);
         }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -207,3 +408,4 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+    
