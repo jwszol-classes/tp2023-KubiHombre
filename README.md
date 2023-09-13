@@ -16,8 +16,7 @@ This function works thanks to the "SetTimer" function, which is reset after the 
 - The program presents the mass of transported passengers on the user interface in the right top corner. Average person mass is 70kg 
 
 
-
-![image](https://github.com/jwszol-classes/tp2023-KubiHombre/assets/106477285/fe8c37f7-89dc-45ca-837c-452d2e3bbc23)
+![image](https://github.com/jwszol-classes/tp2023-KubiHombre/assets/106477285/1db56057-5efd-47ae-9170-b3a326d72ed9)
 
 
 ## Code language: 
